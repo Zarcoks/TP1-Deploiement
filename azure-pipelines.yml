@@ -23,11 +23,11 @@ steps:
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
     deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'Azure subscription 1(970fcef5-9c23-4f7d-a11b-5a96d104f066)'
-    subscriptionId: '970fcef5-9c23-4f7d-a11b-5a96d104f066'
+    azureResourceManagerConnection: 'Azure subscription 1(1)(41734dbc-edac-4915-a1d9-63da50959410)'
+    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
     action: 'Create Or Update Resource Group'
-    resourceGroupName: 'Guro'
-    location: 'East US'
+    resourceGroupName: 'GroupeDeTP'
+    location: 'Canada East'
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
     csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
