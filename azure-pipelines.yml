@@ -14,15 +14,6 @@ steps:
       $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
       Write-Host $CloudContent
       $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
-      Write-Host $encodedContent
-      Write-Host "##vso[task.setvariable variable=CloudInitContent;]$encodedContent"
-
-- task: AzureKeyVault@2
-  inputs:
-    azureSubscription: 'Azure subscription 1(1)(41734dbc-edac-4915-a1d9-63da50959410)'
-    KeyVaultName: 'NosMotsDePasse'
-    SecretsFilter: '*'
-    RunAsPreJob: false
 
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
@@ -35,5 +26,5 @@ steps:
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
     csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
-    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(VMPassword)'
+    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPassword)'
     deploymentMode: 'Incremental'
