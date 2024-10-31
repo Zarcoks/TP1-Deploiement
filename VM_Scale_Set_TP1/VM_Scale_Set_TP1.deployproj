@@ -25,6 +25,8 @@
   <ItemGroup>
     <Content Include="azuredeploy.json" />
     <Content Include="azuredeploy.parameters.json" />
+    <Content Include="KeyVault\azuredeploy.json" />
+    <Content Include="KeyVault\azuredeploy.parameters.json" />
     <None Include="Cloud-Init.txt" />
     <None Include="Deployment.targets">
       <Visible>False</Visible>

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "vaults_VMPassword1_name": {
+      "defaultValue": "VMPassword1",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2024-04-01-preview",
+      "name": "[parameters('vaults_VMPassword1_name')]",
+      "location": "canadaeast",
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "Standard"
+        },
+        "tenantId": "6c2fa649-8328-47a1-a1a3-3d1d4677c16f",
+        "networkAcls": {
+          "bypass": "None",
+          "defaultAction": "Allow",
+          "ipRules": [],
+          "virtualNetworkRules": []
+        },
+        "accessPolicies": [],
+        "enabledForDeployment": false,
+        "enabledForDiskEncryption": false,
+        "enabledForTemplateDeployment": false,
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "enableRbacAuthorization": true,
+        "vaultUri": "https://vmpassword1.vault.azure.net/",
+        "provisioningState": "Succeeded",
+        "publicNetworkAccess": "Enabled"
+      }
+    }
+  ]
+}
