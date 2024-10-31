@@ -15,19 +15,19 @@ steps:
       Write-Host $CloudContent
       $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
 
+
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
     deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'Azure subscription 1(1)(41734dbc-edac-4915-a1d9-63da50959410)'
+    azureResourceManagerConnection: 'Azure subscription 1(41734dbc-edac-4915-a1d9-63da50959410)'
     subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
     action: 'Create Or Update Resource Group'
     resourceGroupName: 'TP1-Keyvaults'
     location: 'Canada East'
     templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
+    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
+    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
     deploymentMode: 'Incremental'
-
 
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
