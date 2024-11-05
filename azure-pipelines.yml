@@ -31,8 +31,8 @@ steps:
 
 - task: AzureKeyVault@2
   inputs:
-    azureSubscription: 'Azure subscription 1(41734dbc-edac-4915-a1d9-63da50959410)'
-    KeyVaultName: 'KeyVaultPrincipale'
+    azureSubscription: 'GroupeDeTP-Service'
+    KeyVaultName: 'KeyVaultPrincipaleTP1'
     SecretsFilter: 'AdminPass'
     RunAsPreJob: false
 
