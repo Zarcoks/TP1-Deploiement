@@ -26,8 +26,22 @@ steps:
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
     csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
-    overrideParameters: '-Secret $(AdminPassword)'
+    overrideParameters: '-Secret Vmpassword2024$)'
     deploymentMode: 'Incremental'
+
+- task: AzureKeyVault@2
+  inputs:
+    azureSubscription: 'Azure subscription 1(41734dbc-edac-4915-a1d9-63da50959410)'
+    KeyVaultName: 'KeyVaultPrincipale'
+    SecretsFilter: 'AdminPass'
+    RunAsPreJob: false
+
+- task: PowerShell@2
+  displayName: Test Secrets
+  inputs:
+    targetType: 'inline'
+    script: |
+          Write-Host $(AdminPass)
 
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
@@ -40,5 +54,5 @@ steps:
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
     csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
-    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPassword)'
+    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
     deploymentMode: 'Incremental'
