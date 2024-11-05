@@ -36,13 +36,6 @@ steps:
     SecretsFilter: 'AdminPass'
     RunAsPreJob: false
 
-- task: PowerShell@2
-  displayName: Test Secrets
-  inputs:
-    targetType: 'inline'
-    script: |
-          Write-Host $(AdminPass)
-
 - task: AzureResourceManagerTemplateDeployment@3
   inputs:
     deploymentScope: 'Resource Group'
