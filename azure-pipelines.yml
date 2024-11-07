@@ -32,7 +32,7 @@ steps:
 - task: AzureKeyVault@2
   inputs:
     azureSubscription: 'GroupeDeTP-Service'
-    KeyVaultName: 'KeyVaultPrincipaleTP1'
+    KeyVaultName: 'KeyvaultPrincipaleTP1'
     SecretsFilter: 'AdminPass'
     RunAsPreJob: false
 

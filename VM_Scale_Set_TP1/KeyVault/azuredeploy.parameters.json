@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "name": {
-      "value": "KeyVaultPrincipaleTP1"
+      "value": "KeyvaultPrincipaleTP1"
     },
     "location": {
       "value": "canadacentral"
