@@ -29,6 +29,7 @@ steps:
     overrideParameters: '-Secret Vmpassword2024$'
     deploymentMode: 'Incremental'
 
+
 - task: AzureKeyVault@2
   inputs:
     azureSubscription: 'GroupeDeTP-Service'
