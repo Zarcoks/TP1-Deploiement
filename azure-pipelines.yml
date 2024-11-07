@@ -21,12 +21,12 @@ steps:
     azureResourceManagerConnection: 'GroupeDeTP-Service'
     subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
     action: 'Create Or Update Resource Group'
-    resourceGroupName: 'GroupeDeTP'
+    resourceGroupName: 'KeyVaultRG'
     location: 'Canada East'
     templateLocation: 'Linked artifact'
     csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
     csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
-    overrideParameters: '-Secret Vmpassword2024$)'
+    overrideParameters: '-Secret Vmpassword2024$'
     deploymentMode: 'Incremental'
 
 - task: AzureKeyVault@2
