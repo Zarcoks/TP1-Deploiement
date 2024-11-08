@@ -1,59 +1,34 @@
 {
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+
+  // Paramètres pour configurer le Key Vault et le secret
   "parameters": {
-    "name": {
-      "type": "String"
-    },
-    "location": {
-      "type": "String"
-    },
-    "sku": {
-      "type": "String"
-    },
-    "accessPolicies": {
-      "type": "Array"
-    },
-    "tenant": {
-      "type": "String"
-    },
-    "enabledForDeployment": {
-      "type": "Bool"
-    },
-    "enabledForTemplateDeployment": {
-      "type": "Bool"
-    },
-    "enabledForDiskEncryption": {
-      "type": "Bool"
-    },
-    "enableRbacAuthorization": {
-      "type": "Bool"
-    },
-    "publicNetworkAccess": {
-      "type": "String"
-    },
-    "enableSoftDelete": {
-      "type": "Bool"
-    },
-    "softDeleteRetentionInDays": {
-      "type": "Int"
-    },
-    "networkAcls": {
-      "type": "Object"
-    },
-    "Secret": {
-      "type": "SecureString"
-    }
+    "name": { "type": "String" },
+    "location": { "type": "String" },
+    "sku": { "type": "String" },
+    "accessPolicies": { "type": "Array" },
+    "tenant": { "type": "String" },
+    "enabledForDeployment": { "type": "Bool" },
+    "enabledForTemplateDeployment": { "type": "Bool" },
+    "enabledForDiskEncryption": { "type": "Bool" },
+    "enableRbacAuthorization": { "type": "Bool" },
+    "publicNetworkAccess": { "type": "String" },
+    "enableSoftDelete": { "type": "Bool" },
+    "softDeleteRetentionInDays": { "type": "Int" },
+    "networkAcls": { "type": "Object" },
+    "Secret": { "type": "SecureString" }
   },
+
   "variables": {},
+
   "resources": [
+    // Création du Key Vault avec les paramètres de sécurité
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-08-01-preview",
       "name": "[parameters('name')]",
       "location": "[parameters('location')]",
-      "dependsOn": [],
-      "tags": {},
       "properties": {
         "enabledForDeployment": "[parameters('enabledForDeployment')]",
         "enabledForTemplateDeployment": "[parameters('enabledForTemplateDeployment')]",
@@ -71,6 +46,8 @@
         "networkAcls": "[parameters('networkAcls')]"
       }
     },
+
+    // Création d'un secret "AdminPass" dans le Key Vault
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2024-04-01-preview",
@@ -81,12 +58,11 @@
       ],
       "properties": {
         "contentType": "Administrator Password Use for VM",
-        "attributes": {
-          "enabled": true
-        },
+        "attributes": { "enabled": true },
         "value": "[parameters('Secret')]"
       }
     }
   ],
+
   "outputs": {}
 }

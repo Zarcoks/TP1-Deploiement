@@ -1,34 +1,30 @@
 {
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
   "contentVersion": "1.0.0.0",
+
+  // Paramètres pour configurer le déploiement réseau et VM Scale Set
   "parameters": {
-    "location": {
-      "value": "canadaeast"
-    },
-    "osDiskType": {
-      "value": "StandardSSD_LRS"
-    },
-    "addressPrefixes": {
-      "value": [
-        "10.0.0.0/16"
-      ]
-    },
+    "location": { "value": "canadaeast" },
+    "osDiskType": { "value": "StandardSSD_LRS" },
+
+    // Configuration de l'adressage réseau et sous-réseau
+    "addressPrefixes": { "value": [ "10.0.0.0/16" ] },
     "subnets": {
       "value": [
         {
           "name": "default",
-          "properties": {
-            "addressPrefix": "10.0.0.0/20"
-          }
+          "properties": { "addressPrefix": "10.0.0.0/20" }
         }
       ]
     },
+
+    // Références et configurations pour le réseau virtuel
     "virtualNetworkId": {
       "value": "/subscriptions/41734dbc-edac-4915-a1d9-63da50959410/resourceGroups/GroupeDeTP/providers/Microsoft.Network/virtualNetworks/GroupeDeTP-vnet"
     },
-    "virtualNetworkName": {
-      "value": "GroupeDeTP-vnet"
-    },
+    "virtualNetworkName": { "value": "GroupeDeTP-vnet" },
+
+    // Configuration du groupe de sécurité réseau (NSG)
     "networkSecurityGroups": {
       "value": [
         {
@@ -52,20 +48,14 @@
         }
       ]
     },
+
+    // Configuration des interfaces réseau pour les VMs
     "networkInterfaceConfigurations": {
       "value": [
         {
           "name": "GroupeDeTP-vnet-nic01",
           "primary": true,
           "subnetId": "/subscriptions/41734dbc-edac-4915-a1d9-63da50959410/resourceGroups/GroupeDeTP/providers/Microsoft.Network/virtualNetworks/GroupeDeTP-vnet/subnets/default",
-          "applicationGatewayBackendAddressPools": [],
-          "loadBalancerBackendAddressPools": [
-            {
-              "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancerName'), parameters('backendPoolName'))]"
-            }
-          ],
-          "applicationSecurityGroups": [],
-          "loadBalancerInboundNatPools": [],
           "enableAcceleratedNetworking": false,
           "nsgName": "basicNsgGroupeDeTP-vnet-nic01",
           "nsgId": "/subscriptions/41734dbc-edac-4915-a1d9-63da50959410/resourceGroups/GroupeDeTP/providers/Microsoft.Network/networkSecurityGroups/basicNsgGroupeDeTP-vnet-nic01",
@@ -73,70 +63,36 @@
         }
       ]
     },
-    "backendPoolName": {
-      "value": "bepool"
-    },
-    "loadBalancerName": {
-      "value": "ALB"
-    },
-    "loadbalancingRuleFrontEndPort": {
-      "value": 80
-    },
-    "loadbalancingRuleBackendEndPort": {
-      "value": 80
-    },
-    "loadbalancingRuleProtocol": {
-      "value": "Tcp"
-    },
-    "InboundNATRuleFrontEndPortRangeStart": {
-      "value": 50000
-    },
-    "vmName": {
-      "value": "VMSS1"
-    },
-    "virtualMachineScaleSetName": {
-      "value": "VMSS1"
-    },
-    "instanceCount": {
-      "value": "2"
-    },
-    "instanceSize": {
-      "value": "Standard_D2s_v3"
-    },
-    "platformFaultDomainCount": {
-      "value": "1"
-    },
+
+    // Configuration du Load Balancer et des règles de répartition de charge
+    "backendPoolName": { "value": "bepool" },
+    "loadBalancerName": { "value": "ALB" },
+    "loadbalancingRuleFrontEndPort": { "value": 80 },
+    "loadbalancingRuleBackendEndPort": { "value": 80 },
+    "loadbalancingRuleProtocol": { "value": "Tcp" },
+    "InboundNATRuleFrontEndPortRangeStart": { "value": 50000 },
+
+    // Configuration du Virtual Machine Scale Set (VMSS)
+    "vmName": { "value": "VMSS1" },
+    "virtualMachineScaleSetName": { "value": "VMSS1" },
+    "instanceCount": { "value": "2" },
+    "instanceSize": { "value": "Standard_D2s_v3" },
+    "platformFaultDomainCount": { "value": "1" },
     "scaleInPolicy": {
       "value": {
-        "rules": [
-          "Default"
-        ],
+        "rules": [ "Default" ],
         "forceDeletion": false
       }
     },
-    "upgradePolicy": {
-      "value": "Manual"
-    },
-    "hibernationEnabled": {
-      "value": false
-    },
-    "adminUsername": {
-      "value": "Username"
-    },
-    "adminPassword": {
-      "value": null
-    },
-    "customData": {
-      "value": null
-    },
-    "securityType": {
-      "value": "TrustedLaunch"
-    },
-    "secureBoot": {
-      "value": true
-    },
-    "vTPM": {
-      "value": true
-    }
+    "upgradePolicy": { "value": "Manual" },
+    "hibernationEnabled": { "value": false },
+    "adminUsername": { "value": "Username" },
+    "adminPassword": { "value": null },
+
+    // Paramètres de sécurité pour le VMSS
+    "customData": { "value": null },
+    "securityType": { "value": "TrustedLaunch" },
+    "secureBoot": { "value": true },
+    "vTPM": { "value": true }
   }
 }

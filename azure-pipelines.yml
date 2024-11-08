@@ -1,12 +1,13 @@
 trigger:
-  - master
+  - master  # Déclenchement du pipeline sur la branche 'master'
 
-pool: "default"
+pool: "default"  # Utilisation du pool d'agents par défaut
 
 variables:
-  - name: CloudInitContent
+  - name: CloudInitContent  # Variable pour stocker le contenu encodé de Cloud-Init
 
 steps:
+  # Étape 1 : Encodage du fichier Cloud-Init en Base64 pour une utilisation ultérieure
   - task: PowerShell@2
     name: Encodage_CloudInit
     inputs:
@@ -18,7 +19,7 @@ steps:
         $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
         Write-Host "##vso[task.setvariable variable=CloudInitContent]$encodedContent"
 
-  # Déploiement du Key Vault et des secrets
+  # Étape 2 : Déploiement du Key Vault et ajout de secrets pour sécuriser les informations sensibles
   - task: AzureResourceManagerTemplateDeployment@3
     name: Creation_KeyVault
     inputs:
@@ -34,7 +35,7 @@ steps:
       overrideParameters: '-Secret Vmpassword2024$'
       deploymentMode: 'Incremental'
 
-  # Récupérer le secret AdminPass depuis Key Vault
+  # Étape 3 : Récupération du secret AdminPass depuis le Key Vault pour une utilisation dans le déploiement
   - task: AzureKeyVault@2
     name: Recuperation_KeyVault
     inputs:
@@ -43,7 +44,7 @@ steps:
       SecretsFilter: 'AdminPass'
       RunAsPreJob: false
 
-  # Déploiement du Scale Set
+  # Étape 4 : Déploiement du Virtual Machine Scale Set (VMSS) en utilisant les paramètres de configuration et les données encodées de Cloud-Init
   - task: AzureResourceManagerTemplateDeployment@3
     name: Creation_VMSS
     inputs:

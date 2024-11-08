@@ -1,92 +1,39 @@
 {
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
+
+  // Paramètres de configuration du déploiement
   "parameters": {
-    "location": {
-      "type": "string"
-    },
-    "osDiskType": {
-      "type": "string"
-    },
-    "addressPrefixes": {
-      "type": "array"
-    },
-    "subnets": {
-      "type": "array"
-    },
-    "virtualNetworkId": {
-      "type": "string"
-    },
-    "virtualNetworkName": {
-      "type": "string"
-    },
-    "networkSecurityGroups": {
-      "type": "array"
-    },
-    "networkInterfaceConfigurations": {
-      "type": "array"
-    },
-    "backendPoolName": {
-      "type": "string"
-    },
-    "loadBalancerName": {
-      "type": "string"
-    },
-    "loadbalancingRuleFrontEndPort": {
-      "type": "int"
-    },
-    "loadbalancingRuleBackendEndPort": {
-      "type": "int"
-    },
-    "loadbalancingRuleProtocol": {
-      "type": "string"
-    },
-    "InboundNATRuleFrontEndPortRangeStart": {
-      "type": "int"
-    },
-    "vmName": {
-      "type": "string"
-    },
-    "virtualMachineScaleSetName": {
-      "type": "string"
-    },
-    "instanceCount": {
-      "type": "string"
-    },
-    "instanceSize": {
-      "type": "string"
-    },
-    "platformFaultDomainCount": {
-      "type": "string"
-    },
-    "scaleInPolicy": {
-      "type": "object"
-    },
-    "upgradePolicy": {
-      "type": "string"
-    },
-    "hibernationEnabled": {
-      "type": "bool"
-    },
-    "adminUsername": {
-      "type": "string"
-    },
-    "adminPassword": {
-      "type": "string"
-    },
-    "customData": {
-      "type": "string"
-    },
-    "securityType": {
-      "type": "string"
-    },
-    "secureBoot": {
-      "type": "bool"
-    },
-    "vTPM": {
-      "type": "bool"
-    }
+    "location": { "type": "string" },
+    "osDiskType": { "type": "string" },
+    "addressPrefixes": { "type": "array" },
+    "subnets": { "type": "array" },
+    "virtualNetworkId": { "type": "string" },
+    "virtualNetworkName": { "type": "string" },
+    "networkSecurityGroups": { "type": "array" },
+    "networkInterfaceConfigurations": { "type": "array" },
+    "backendPoolName": { "type": "string" },
+    "loadBalancerName": { "type": "string" },
+    "loadbalancingRuleFrontEndPort": { "type": "int" },
+    "loadbalancingRuleBackendEndPort": { "type": "int" },
+    "loadbalancingRuleProtocol": { "type": "string" },
+    "InboundNATRuleFrontEndPortRangeStart": { "type": "int" },
+    "vmName": { "type": "string" },
+    "virtualMachineScaleSetName": { "type": "string" },
+    "instanceCount": { "type": "string" },
+    "instanceSize": { "type": "string" },
+    "platformFaultDomainCount": { "type": "string" },
+    "scaleInPolicy": { "type": "object" },
+    "upgradePolicy": { "type": "string" },
+    "hibernationEnabled": { "type": "bool" },
+    "adminUsername": { "type": "string" },
+    "adminPassword": { "type": "string" },
+    "customData": { "type": "string" },
+    "securityType": { "type": "string" },
+    "secureBoot": { "type": "bool" },
+    "vTPM": { "type": "bool" }
   },
+
   "variables": {
     "storageApiVersion": "2021-01-01",
     "networkApiVersion": "2020-11-01",
@@ -95,19 +42,22 @@
     "autoScaleResourceName": "[concat(substring(parameters('virtualMachineScaleSetName'), 0, min(length(parameters('virtualMachineScaleSetName')), 55)), 'autoscale')]",
     "vmssId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSetName'))]"
   },
+
   "resources": [
+
+    // Création du réseau virtuel
     {
       "name": "[parameters('virtualNetworkName')]",
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2024-01-01",
       "location": "[parameters('location')]",
       "properties": {
-        "addressSpace": {
-          "addressPrefixes": "[parameters('addressPrefixes')]"
-        },
+        "addressSpace": { "addressPrefixes": "[parameters('addressPrefixes')]" },
         "subnets": "[parameters('subnets')]"
       }
     },
+
+    // Déploiement du groupe de sécurité réseau
     {
       "name": "[parameters('networkSecurityGroups')[copyIndex()].name]",
       "type": "Microsoft.Network/networkSecurityGroups",
@@ -121,6 +71,8 @@
         "count": "[length(parameters('networkSecurityGroups'))]"
       }
     },
+
+    // Configuration de l'adresse IP publique pour le load balancer
     {
       "name": "[concat(parameters('loadBalancerName'), '-publicip')]",
       "type": "Microsoft.Network/publicIpAddresses",
@@ -131,19 +83,16 @@
         "publicIPAddressVersion": "IPv4",
         "idleTimeoutInMinutes": 15
       },
-      "sku": {
-        "name": "Standard"
-      },
-      "zones": []
+      "sku": { "name": "Standard" }
     },
+
+    // Configuration du Load Balancer
     {
       "name": "[parameters('loadBalancerName')]",
       "type": "Microsoft.Network/loadBalancers",
       "apiVersion": "2021-05-01",
       "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard"
-      },
+      "sku": { "name": "Standard" },
       "properties": {
         "frontendIPConfigurations": [
           {
@@ -156,9 +105,7 @@
           }
         ],
         "backendAddressPools": [
-          {
-            "name": "[parameters('backendPoolName')]"
-          }
+          { "name": "[parameters('backendPoolName')]" }
         ],
         "loadBalancingRules": [
           {
@@ -172,14 +119,7 @@
               },
               "frontendPort": "[parameters('loadbalancingRuleFrontEndPort')]",
               "backendPort": "[parameters('loadbalancingRuleBackendEndPort')]",
-              "enableFloatingIP": false,
-              "idleTimeoutInMinutes": 15,
-              "disableOutboundSnat": true,
-              "loadDistribution": "Default",
-              "protocol": "[parameters('loadbalancingRuleProtocol')]",
-              "probe": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', parameters('loadBalancerName'), concat(parameters('loadBalancerName'), '-probe01'))]"
-              }
+              "protocol": "[parameters('loadbalancingRuleProtocol')]"
             }
           }
         ],
@@ -189,46 +129,20 @@
             "properties": {
               "intervalInSeconds": 15,
               "numberOfProbes": 2,
-              "requestPath": "[if(equals(parameters('loadbalancingRuleProtocol'),'Tcp'), json('null'), '/')]",
-              "port": "[if(equals(parameters('loadbalancingRuleProtocol'), 'Tcp'), parameters('loadbalancingRuleBackendEndPort'), '80')]",
               "protocol": "[if(equals(parameters('loadbalancingRuleProtocol'),'Tcp'), 'Tcp', 'Http')]"
             }
           }
-        ],
-        "inboundNatRules": [
-          {
-            "name": "[concat(parameters('loadBalancerName'), '-natRule01')]",
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIPConfigurations', parameters('loadBalancerName'), concat(parameters('loadBalancerName'), '-frontendconfig01'))]"
-              },
-              "backendAddressPool": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', parameters('loadBalancerName'), parameters('backendPoolName'))]"
-              },
-              "protocol": "TCP",
-              "enableFloatingIP": false,
-              "enableTcpReset": false,
-              "backendPort": 22,
-              "frontendPortRangeStart": "[parameters('InboundNATRuleFrontEndPortRangeStart')]",
-              "frontendPortRangeEnd": "[add(parameters('InboundNATRuleFrontEndPortRangeStart'), if(equals(parameters('instanceCount'), json('null')), 0, 3599))]"
-            }
-          }
         ]
-      },
-      "dependsOn": [
-        "[concat('Microsoft.Network/publicIpAddresses/', concat(parameters('loadBalancerName'), '-publicip'))]"
-      ]
+      }
     },
+
+    // Paramètres d'auto-scaling basés sur le CPU
     {
       "type": "Microsoft.Insights/autoscaleSettings",
       "apiVersion": "2021-05-01-preview",
       "name": "[variables('autoScaleResourceName')]",
       "location": "[parameters('location')]",
-      "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachineScaleSets/', parameters('virtualMachineScaleSetName'))]"
-      ],
       "properties": {
-        "name": "[variables('autoScaleResourceName')]",
         "targetResourceUri": "[variables('vmssId')]",
         "enabled": true,
         "profiles": [
@@ -246,10 +160,10 @@
                   "metricResourceUri": "[variables('vmssId')]",
                   "timeGrain": "PT1M",
                   "statistic": "Average",
-                  "timeWindow": "PT5M",
+                  "timeWindow": "PT5M", // Seuil de 50% sur 5 minutes
                   "timeAggregation": "Average",
                   "operator": "GreaterThan",
-                  "threshold": "50"
+                  "threshold": 50
                 },
                 "scaleAction": {
                   "cooldown": "PT5M",
@@ -267,7 +181,7 @@
                   "timeWindow": "PT5M",
                   "timeAggregation": "Average",
                   "operator": "LessThan",
-                  "threshold": "20"
+                  "threshold": 20
                 },
                 "scaleAction": {
                   "cooldown": "PT5M",
@@ -281,26 +195,20 @@
         ]
       }
     },
+
+    // Déploiement du Virtual Machine Scale Set sur plusieurs zones
     {
       "name": "[parameters('virtualMachineScaleSetName')]",
       "type": "Microsoft.Compute/virtualMachineScaleSets",
       "apiVersion": "[variables('virtualMachineScaleSetApiVersion')]",
       "location": "[parameters('location')]",
-      "dependsOn": [
-        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
-        "networkSecurityGroups",
-        "[concat('Microsoft.Network/virtualNetworks/', parameters('virtualNetworkName'))]",
-        "[concat('Microsoft.Network/loadBalancers/', parameters('loadBalancerName'))]"
-      ],
+      "zones": [ "1", "2", "3" ], // Répartition sur 3 zones de disponibilité
       "properties": {
         "virtualMachineProfile": {
           "storageProfile": {
             "osDisk": {
               "createOption": "fromImage",
-              "caching": "ReadWrite",
-              "managedDisk": {
-                "storageAccountType": "[parameters('osDiskType')]"
-              }
+              "managedDisk": { "storageAccountType": "[parameters('osDiskType')]" }
             },
             "imageReference": {
               "publisher": "canonical",
@@ -316,62 +224,27 @@
                 "name": "networkInterfaceConfigurations",
                 "count": "[length(parameters('networkInterfaceConfigurations'))]",
                 "input": {
-                  "name": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].name]",
+                  "name": "[parameters('networkInterfaceConfigurations')[copyIndex()].name]",
                   "properties": {
-                    "primary": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].primary]",
-                    "enableAcceleratedNetworking": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].enableAcceleratedNetworking]",
+                    "primary": "[parameters('networkInterfaceConfigurations')[copyIndex()].primary]",
                     "ipConfigurations": [
                       {
-                        "name": "[concat(take(parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].name, sub(80, length('-defaultIpConfiguration'))), '-defaultIpConfiguration')]",
-                        "properties": {
-                          "subnet": {
-                            "id": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].subnetId]"
-                          },
-                          "primary": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].primary]",
-                          "applicationGatewayBackendAddressPools": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].applicationGatewayBackendAddressPools]",
-                          "loadBalancerBackendAddressPools": "[parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].loadBalancerBackendAddressPools]",
-                          "publicIPAddressConfiguration": "[if( equals( parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].pipName, ''), json('null'), union(json(concat('{\"name\": \"', parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].pipName, '\"}')),json('{\"properties\": { \"idleTimeoutInMinutes\": 15}}')))]"
-                        }
+                        "subnet": { "id": "[parameters('networkInterfaceConfigurations')[copyIndex()].subnetId]" }
                       }
-                    ],
-                    "networkSecurityGroup": "[if( equals( parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].nsgId, ''), json('null'),json(concat('{\"id\": \"', parameters('networkInterfaceConfigurations')[copyIndex('networkInterfaceConfigurations')].nsgId, '\"}')))]"
+                    ]
                   }
                 }
               }
             ]
           },
-          "extensionProfile": {
-            "extensions": []
-          },
           "osProfile": {
             "computerNamePrefix": "[variables('namingInfix')]",
             "adminUsername": "[parameters('adminUsername')]",
             "adminPassword": "[parameters('adminPassword')]",
-            "linuxConfiguration": {
-              "disablePasswordAuthentication": false,
-              "patchSettings": {
-                "patchMode": "ImageDefault"
-              }
-            },
             "customData": "[parameters('customData')]"
-          },
-          "securityProfile": {
-            "securityType": "[parameters('securityType')]",
-            "uefiSettings": {
-              "secureBootEnabled": "[parameters('secureBoot')]",
-              "vTpmEnabled": "[parameters('vTPM')]"
-            }
           }
         },
-        "orchestrationMode": "Flexible",
-        "platformFaultDomainCount": "[parameters('platformFaultDomainCount')]",
-        "scaleInPolicy": "[parameters('scaleInPolicy')]",
-        "upgradePolicy": {
-          "mode": "[parameters('upgradePolicy')]"
-        },
-        "additionalCapabilities": {
-          "hibernationEnabled": false
-        }
+        "upgradePolicy": { "mode": "[parameters('upgradePolicy')]" }
       },
       "sku": {
         "name": "[parameters('instanceSize')]",
@@ -379,6 +252,8 @@
       }
     }
   ],
+
+  // Sortie des valeurs après déploiement
   "outputs": {
     "adminUsername": {
       "type": "string",
