@@ -1,56 +1,105 @@
 trigger:
-- master
+  - master
 
 pool: "default"
 
 variables:
-- name: CloudInitContent
+  - name: CloudInitContent
 
 steps:
-- task: PowerShell@2
-  name: Encode_cloud_content
-  inputs:
-    targetType: 'inline'
-    script: |
-      $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
-      Write-Host $CloudContent
-      $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+  # Charger et encoder le fichier Cloud-Init
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script: |
+        $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
+        Write-Host "Contenu de Cloud-Init :"
+        Write-Host $CloudContent
+        $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+        Write-Host "##vso[task.setvariable variable=CloudInitContent]$encodedContent"
 
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_KeyVault
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'KeyVaultRG'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
-    overrideParameters: '-Secret Vmpassword2024$'
-    deploymentMode: 'Incremental'
+  # Déploiement du Key Vault et des secrets
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'KeyVaultRG'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
+      overrideParameters: '-Secret Vmpassword2024$'
+      deploymentMode: 'Incremental'
 
+  # Récupérer le secret AdminPass depuis Key Vault
+  - task: AzureKeyVault@2
+    inputs:
+      azureSubscription: 'GroupeDeTP-Service'
+      KeyVaultName: 'KeyvaultPrincTP1'
+      SecretsFilter: 'AdminPass'
+      RunAsPreJob: false
 
-- task: AzureKeyVault@2
-  name: Recuperation_Keyvault
-  inputs:
-    azureSubscription: 'GroupeDeTP-Service'
-    KeyVaultName: 'KeyvaultPrincTP1'
-    SecretsFilter: 'AdminPass'
-    RunAsPreJob: false
+  # Déploiement du Scale Set
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'GroupeDeTP'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
+      overrideParameters: '-customData $(CloudInitContent) -adminPassword "$(AdminPass)"'
+      deploymentMode: 'Incremental'
 
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_VMSS
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'GroupeDeTP'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
-    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
-    deploymentMode: 'Incremental'
+  # Vérification du déploiement et de la configuration
+  - task: AzureCLI@2
+    inputs:
+      azureSubscription: 'GroupeDeTP-Service'
+      scriptType: 'bash'
+      scriptLocation: 'inlineScript'
+      inlineScript: |
+        # 1. Vérifier les instances de VM dans le Scale Set
+        echo "Vérification des instances dans le Scale Set..."
+        az vmss list-instances --resource-group GroupeDeTP --name VMSS1 --output table
+
+        # 2. Vérifier l'état de l'application sur chaque VM
+        echo "Vérification de l'état de l'application sur chaque instance..."
+        for vm in $(az vmss list-instances --resource-group GroupeDeTP --name VMSS1 --query "[].instanceId" -o tsv); do
+          echo "Instance $vm"
+          az vmss run-command invoke --command-id RunShellScript \
+            --name VMSS1 --resource-group GroupeDeTP --instance-id $vm \
+            --scripts "curl -s http://localhost:3000 || echo 'Application indisponible'"
+        done
+
+        # 3. Vérifier l'état du service Nginx
+        echo "Vérification de l'état de Nginx..."
+        for vm in $(az vmss list-instances --resource-group GroupeDeTP --name VMSS1 --query "[].instanceId" -o tsv); do
+          echo "Instance $vm"
+          az vmss run-command invoke --command-id RunShellScript \
+            --name VMSS1 --resource-group GroupeDeTP --instance-id $vm \
+            --scripts "systemctl status nginx || echo 'Nginx non démarré'"
+        done
+
+        # 4. Vérifier les logs de Nginx pour des erreurs éventuelles
+        echo "Vérification des logs de Nginx..."
+        for vm in $(az vmss list-instances --resource-group GroupeDeTP --name VMSS1 --query "[].instanceId" -o tsv); do
+          echo "Instance $vm"
+          az vmss run-command invoke --command-id RunShellScript \
+            --name VMSS1 --resource-group GroupeDeTP --instance-id $vm \
+            --scripts "tail -n 20 /var/log/nginx/error.log || echo 'Pas de logs d'erreur disponibles'"
+        done
+
+        # 5. Vérifier le statut du Load Balancer et la connectivité externe
+        echo "Vérification du Load Balancer et de la connectivité..."
+        lb_ip=$(az network public-ip show --resource-group GroupeDeTP --name ALB-publicip --query "ipAddress" -o tsv)
+        echo "Adresse IP publique du Load Balancer: $lb_ip"
+        curl -s http://$lb_ip || echo "Le site web n'est pas accessible depuis le Load Balancer"
+
+        # 6. Afficher les règles de sécurité réseau pour s'assurer que le trafic sur le port 80 est autorisé
+        echo "Vérification des règles de sécurité réseau..."
+        az network nsg rule list --resource-group GroupeDeTP --nsg-name basicNsgGroupeDeTP-vnet-nic01 --output table
