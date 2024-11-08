@@ -8,6 +8,7 @@ variables:
 
 steps:
 - task: PowerShell@2
+  name: Encode_cloud_content
   inputs:
     targetType: 'inline'
     script: |
@@ -16,6 +17,7 @@ steps:
       $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
 
 - task: AzureResourceManagerTemplateDeployment@3
+  name: Creation_KeyVault
   inputs:
     deploymentScope: 'Resource Group'
     azureResourceManagerConnection: 'GroupeDeTP-Service'
@@ -31,6 +33,7 @@ steps:
 
 
 - task: AzureKeyVault@2
+  name: Recuperation_Keyvault
   inputs:
     azureSubscription: 'GroupeDeTP-Service'
     KeyVaultName: 'KeyvaultPrincTP1'
@@ -38,6 +41,7 @@ steps:
     RunAsPreJob: false
 
 - task: AzureResourceManagerTemplateDeployment@3
+  name: Creation_VMSS
   inputs:
     deploymentScope: 'Resource Group'
     azureResourceManagerConnection: 'GroupeDeTP-Service'
