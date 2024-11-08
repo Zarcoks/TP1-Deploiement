@@ -1,56 +1,98 @@
 trigger:
-- master
+  - master
 
 pool: "default"
 
 variables:
-- name: CloudInitContent
+  - name: CloudInitContent
 
 steps:
-- task: PowerShell@2
-  name: Encode_cloud_content
-  inputs:
-    targetType: 'inline'
-    script: |
-      $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
-      Write-Host $CloudContent
-      $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+  # Charger et encoder le fichier Cloud-Init
+  - task: PowerShell@2
+    inputs:
+      targetType: 'inline'
+      script: |
+        $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
+        Write-Host "Contenu de Cloud-Init :"
+        Write-Host $CloudContent
+        $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+        Write-Host "##vso[task.setvariable variable=CloudInitContent]$encodedContent"
 
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_KeyVault
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'KeyVaultRG'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
-    overrideParameters: '-Secret Vmpassword2024$'
-    deploymentMode: 'Incremental'
+  # Déploiement du Key Vault et des secrets
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'KeyVaultRG'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
+      overrideParameters: '-Secret Vmpassword2024$'
+      deploymentMode: 'Incremental'
 
+  # Récupérer le secret AdminPass depuis Key Vault
+  - task: AzureKeyVault@2
+    inputs:
+      azureSubscription: 'GroupeDeTP-Service'
+      KeyVaultName: 'KeyvaultPrincTP1'
+      SecretsFilter: 'AdminPass'
+      RunAsPreJob: false
 
-- task: AzureKeyVault@2
-  name: Recuperation_Keyvault
-  inputs:
-    azureSubscription: 'GroupeDeTP-Service'
-    KeyVaultName: 'KeyvaultPrincTP1'
-    SecretsFilter: 'AdminPass'
-    RunAsPreJob: false
+  # Déploiement du Scale Set
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'GroupeDeTP'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
+      overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
+      deploymentMode: 'Incremental'
 
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_VMSS
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'GroupeDeTP'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
-    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
-    deploymentMode: 'Incremental'
+  # Diagnostic de Scale Set avec PowerShell
+  - task: AzurePowerShell@5
+    inputs:
+      azureSubscription: 'GroupeDeTP-Service'
+      ScriptType: 'InlineScript'
+      Inline: |
+        $resourceGroupName = "GroupeDeTP"
+        $scaleSetName = "VMSS1"
+
+        # Vérifier l'état des instances du Scale Set
+        Write-Output "Récupération de l'état des instances dans le Scale Set..."
+        $vmInstances = Get-AzVmssVM -ResourceGroupName $resourceGroupName -VMScaleSetName $scaleSetName
+        if (!$vmInstances) {
+          Write-Output "Erreur : Aucune instance trouvée dans le Scale Set."
+          exit 1
+        }
+
+        foreach ($vm in $vmInstances) {
+          Write-Output "Instance ID: $($vm.InstanceId), Provisioning State: $($vm.ProvisioningState)"
+
+          # Vérifier l'état du service Nginx
+          Write-Output "Vérification de l'état du service Nginx pour l'instance ID $($vm.InstanceId)..."
+          $script = "systemctl status nginx || echo 'Nginx non démarré'"
+          $result = Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vm.Name -CommandId 'RunShellScript' -ScriptString $script
+          $result.Value | ForEach-Object { Write-Output $_.Message }
+
+          # Vérifier l'accès à l'application sur le port 3000
+          Write-Output "Vérification de l'accès à l'application sur le port 3000 pour l'instance ID $($vm.InstanceId)..."
+          $script = "curl -s http://localhost:3000 || echo 'Application indisponible'"
+          $result = Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vm.Name -CommandId 'RunShellScript' -ScriptString $script
+          $result.Value | ForEach-Object { Write-Output $_.Message }
+
+          # Afficher les dernières lignes des logs de Nginx
+          Write-Output "Affichage des logs Nginx pour l'instance ID $($vm.InstanceId)..."
+          $script = "tail -n 20 /var/log/nginx/error.log || echo 'Pas de logs d'erreur disponibles'"
+          $result = Invoke-AzVMRunCommand -ResourceGroupName $resourceGroupName -VMName $vm.Name -CommandId 'RunShellScript' -ScriptString $script
+          $result.Value | ForEach-Object { Write-Output $_.Message }
+        }
+
+      azurePowerShellVersion: 'LatestVersion'
