@@ -56,23 +56,11 @@
     "instanceSize": {
       "type": "string"
     },
-    "zone": {
-      "type": "array"
-    },
-    "zoneBalance": {
-      "type": "string"
-    },
     "platformFaultDomainCount": {
       "type": "string"
     },
     "scaleInPolicy": {
       "type": "object"
-    },
-    "priority": {
-      "type": "string"
-    },
-    "evictionPolicy": {
-      "type": "string"
     },
     "upgradePolicy": {
       "type": "string"
@@ -86,38 +74,23 @@
     "adminPassword": {
       "type": "secureString"
     },
-    "patchMode": {
-      "type": "string"
-    },
-    "rebootSetting": {
-      "type": "string"
-    },
     "customData": {
-      "type": "secureString"
-    },
-    "healthExtensionProtocol": {
       "type": "string"
     },
-    "healthExtensionPort": {
-      "type": "int"
-    },
-    "healthExtensionRequestPath": {
+    "securityType": {
       "type": "string"
     },
-    "autoRepairsPolicyEnabled": {
+    "secureBoot": {
       "type": "bool"
     },
-    "gracePeriod": {
-      "type": "string"
-    },
-    "autoRepairsAction": {
-      "type": "string"
+    "vTPM": {
+      "type": "bool"
     }
   },
   "variables": {
     "storageApiVersion": "2021-01-01",
     "networkApiVersion": "2020-11-01",
-    "virtualMachineScaleSetApiVersion": "2023-09-01",
+    "virtualMachineScaleSetApiVersion": "2024-07-01",
     "namingInfix": "[toLower(substring(concat(parameters('virtualMachineScaleSetName'), uniqueString(resourceGroup().id)), 0, 9))]",
     "autoScaleResourceName": "[concat(substring(parameters('virtualMachineScaleSetName'), 0, min(length(parameters('virtualMachineScaleSetName')), 55)), 'autoscale')]",
     "vmssId": "[resourceId('Microsoft.Compute/virtualMachineScaleSets', parameters('virtualMachineScaleSetName'))]"
@@ -161,10 +134,7 @@
       "sku": {
         "name": "Standard"
       },
-      "zones": [
-        "1",
-        "2"
-      ]
+      "zones": []
     },
     {
       "name": "[parameters('loadBalancerName')]",
@@ -267,7 +237,7 @@
             "capacity": {
               "default": 2,
               "minimum": 2,
-              "maximum": 20
+              "maximum": 4
             },
             "rules": [
               {
@@ -334,8 +304,8 @@
             },
             "imageReference": {
               "publisher": "canonical",
-              "offer": "0001-com-ubuntu-server-jammy",
-              "sku": "22_04-lts-gen2",
+              "offer": "ubuntu-24_04-lts",
+              "sku": "server",
               "version": "latest"
             }
           },
@@ -371,32 +341,7 @@
             ]
           },
           "extensionProfile": {
-            "extensions": [
-              {
-                "name": "HealthExtension",
-                "properties": {
-                  "publisher": "Microsoft.ManagedServices",
-                  "type": "ApplicationHealthLinux",
-                  "typeHandlerVersion": "1.0",
-                  "autoUpgradeMinorVersion": false,
-                  "settings": {
-                    "protocol": "[parameters('healthExtensionProtocol')]",
-                    "port": "[parameters('healthExtensionPort')]",
-                    "requestPath": "[parameters('healthExtensionRequestPath')]"
-                  }
-                }
-              }
-            ]
-          },
-          "priority": "[parameters('priority')]",
-          "billingProfile": {
-            "maxPrice": -1
-          },
-          "evictionPolicy": "[parameters('evictionPolicy')]",
-          "diagnosticsProfile": {
-            "bootDiagnostics": {
-              "enabled": true
-            }
+            "extensions": []
           },
           "osProfile": {
             "computerNamePrefix": "[variables('namingInfix')]",
@@ -405,17 +350,19 @@
             "linuxConfiguration": {
               "disablePasswordAuthentication": false,
               "patchSettings": {
-                "patchMode": "[parameters('patchMode')]",
-                "automaticByPlatformSettings": {
-                  "rebootSetting": "[parameters('rebootSetting')]"
-                }
+                "patchMode": "ImageDefault"
               }
             },
             "customData": "[parameters('customData')]"
           },
-          "securityProfile": {}
+          "securityProfile": {
+            "securityType": "[parameters('securityType')]",
+            "uefiSettings": {
+              "secureBootEnabled": "[parameters('secureBoot')]",
+              "vTpmEnabled": "[parameters('vTPM')]"
+            }
+          }
         },
-        "zoneBalance": "[parameters('zoneBalance')]",
         "orchestrationMode": "Flexible",
         "platformFaultDomainCount": "[parameters('platformFaultDomainCount')]",
         "scaleInPolicy": "[parameters('scaleInPolicy')]",
@@ -424,18 +371,12 @@
         },
         "additionalCapabilities": {
           "hibernationEnabled": false
-        },
-        "automaticRepairsPolicy": {
-          "enabled": "[parameters('autoRepairsPolicyEnabled')]",
-          "gracePeriod": "[parameters('gracePeriod')]",
-          "repairAction": "[parameters('autoRepairsAction')]"
         }
       },
       "sku": {
         "name": "[parameters('instanceSize')]",
         "capacity": "[int(parameters('instanceCount'))]"
-      },
-      "zones": "[parameters('zone')]"
+      }
     }
   ],
   "outputs": {

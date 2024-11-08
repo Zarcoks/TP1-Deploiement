@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "canadacentral"
+      "value": "canadaeast"
     },
     "osDiskType": {
       "value": "StandardSSD_LRS"
@@ -77,7 +77,7 @@
       "value": "bepool"
     },
     "loadBalancerName": {
-      "value": "LoadBalancer-TP"
+      "value": "ALB"
     },
     "loadbalancingRuleFrontEndPort": {
       "value": 80
@@ -92,25 +92,16 @@
       "value": 50000
     },
     "vmName": {
-      "value": "Scale-Set-TP1"
+      "value": "VMSS1"
     },
     "virtualMachineScaleSetName": {
-      "value": "Scale-Set-TP1"
+      "value": "VMSS1"
     },
     "instanceCount": {
       "value": "2"
     },
     "instanceSize": {
-      "value": "Standard_DS1_v2"
-    },
-    "zone": {
-      "value": [
-        "1",
-        "2"
-      ]
-    },
-    "zoneBalance": {
-      "value": "false"
+      "value": "Standard_D2s_v3"
     },
     "platformFaultDomainCount": {
       "value": "1"
@@ -123,12 +114,6 @@
         "forceDeletion": false
       }
     },
-    "priority": {
-      "value": "Spot"
-    },
-    "evictionPolicy": {
-      "value": "Deallocate"
-    },
     "upgradePolicy": {
       "value": "Manual"
     },
@@ -136,37 +121,22 @@
       "value": false
     },
     "adminUsername": {
-      "value": "LeUsernameUniverselDeNotreEquipe"
+      "value": "Username"
     },
     "adminPassword": {
       "value": null
     },
-    "patchMode": {
-      "value": "AutomaticByPlatform"
-    },
-    "rebootSetting": {
-      "value": "IfRequired"
-    },
     "customData": {
       "value": null
     },
-    "healthExtensionProtocol": {
-      "value": "http"
+    "securityType": {
+      "value": "TrustedLaunch"
     },
-    "healthExtensionPort": {
-      "value": 80
+    "secureBoot": {
+      "value": true
     },
-    "healthExtensionRequestPath": {
-      "value": "/"
-    },
-    "autoRepairsPolicyEnabled": {
-      "value": false
-    },
-    "gracePeriod": {
-      "value": "PT10M"
-    },
-    "autoRepairsAction": {
-      "value": "Replace"
+    "vTPM": {
+      "value": true
     }
   }
 }
