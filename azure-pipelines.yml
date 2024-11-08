@@ -1,56 +1,60 @@
 trigger:
-- master
+  - master
 
 pool: "default"
 
 variables:
-- name: CloudInitContent
+  - name: CloudInitContent
 
 steps:
-- task: PowerShell@2
-  name: Encode_cloud_content
-  inputs:
-    targetType: 'inline'
-    script: |
-      $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
-      Write-Host $CloudContent
-      $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+  - task: PowerShell@2
+    name: Encodage_CloudInit
+    inputs:
+      targetType: 'inline'
+      script: |
+        $CloudContent = Get-Content -Path .\VM_Scale_Set_TP1\Cloud-Init.txt -Raw
+        Write-Host "Contenu de Cloud-Init :"
+        Write-Host $CloudContent
+        $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
+        Write-Host "##vso[task.setvariable variable=CloudInitContent]$encodedContent"
 
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_KeyVault
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'KeyVaultRG'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
-    overrideParameters: '-Secret Vmpassword2024$'
-    deploymentMode: 'Incremental'
+  # Déploiement du Key Vault et des secrets
+  - task: AzureResourceManagerTemplateDeployment@3
+    name: Creation_KeyVault
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'KeyVaultRG'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\KeyVault\azuredeploy.parameters.json'
+      overrideParameters: '-Secret Vmpassword2024$'
+      deploymentMode: 'Incremental'
 
+  # Récupérer le secret AdminPass depuis Key Vault
+  - task: AzureKeyVault@2
+    name: Recuperation_KeyVault
+    inputs:
+      azureSubscription: 'GroupeDeTP-Service'
+      KeyVaultName: 'KeyvaultPrincTP1'
+      SecretsFilter: 'AdminPass'
+      RunAsPreJob: false
 
-- task: AzureKeyVault@2
-  name: Recuperation_Keyvault
-  inputs:
-    azureSubscription: 'GroupeDeTP-Service'
-    KeyVaultName: 'KeyvaultPrincTP1'
-    SecretsFilter: 'AdminPass'
-    RunAsPreJob: false
-
-- task: AzureResourceManagerTemplateDeployment@3
-  name: Creation_VMSS
-  inputs:
-    deploymentScope: 'Resource Group'
-    azureResourceManagerConnection: 'GroupeDeTP-Service'
-    subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
-    action: 'Create Or Update Resource Group'
-    resourceGroupName: 'GroupeDeTP'
-    location: 'Canada East'
-    templateLocation: 'Linked artifact'
-    csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
-    csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
-    overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
-    deploymentMode: 'Incremental'
+  # Déploiement du Scale Set
+  - task: AzureResourceManagerTemplateDeployment@3
+    name: Creation_VMSS
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'GroupeDeTP-Service'
+      subscriptionId: '41734dbc-edac-4915-a1d9-63da50959410'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'GroupeDeTP'
+      location: 'Canada East'
+      templateLocation: 'Linked artifact'
+      csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
+      csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
+      overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
+      deploymentMode: 'Incremental'
