@@ -3,7 +3,7 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "name": {
-      "value": "KeyvaultPrincTP1"
+      "value": "KeyvaultPrincTP1" // Nom du Key Vault
     },
     "location": {
       "value": "canadacentral"
@@ -47,7 +47,7 @@
       }
     },
     "Secret": {
-      "value": null
+      "value": null // Valeur du secret non définie ici pour des raisons de sécurité
     }
   }
 }

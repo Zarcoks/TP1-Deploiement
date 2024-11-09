@@ -3,14 +3,14 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "location": {
-      "value": "canadaeast"
+      "value": "canadaeast" // Région de déploiement
     },
     "osDiskType": {
-      "value": "StandardSSD_LRS"
+      "value": "StandardSSD_LRS" // Type de disque OS (SSD standard)
     },
     "addressPrefixes": {
       "value": [
-        "10.0.0.0/16"
+        "10.0.0.0/16" // Préfixe d'adresse du réseau virtuel
       ]
     },
     "subnets": {
@@ -18,7 +18,7 @@
         {
           "name": "default",
           "properties": {
-            "addressPrefix": "10.0.0.0/20"
+            "addressPrefix": "10.0.0.0/20" // Sous-réseau "default" avec préfixe /20
           }
         }
       ]
@@ -29,6 +29,7 @@
     "virtualNetworkName": {
       "value": "GroupeDeTP-vnet"
     },
+    // Règle de sécurité réseau pour autoriser le trafic TCP entrant sur le port 80
     "networkSecurityGroups": {
       "value": [
         {
@@ -77,7 +78,7 @@
       "value": "bepool"
     },
     "loadBalancerName": {
-      "value": "ALB"
+      "value": "ALB" // Nom du Load Balancer
     },
     "loadbalancingRuleFrontEndPort": {
       "value": 80
@@ -98,10 +99,10 @@
       "value": "VMSS1"
     },
     "instanceCount": {
-      "value": "2"
+      "value": "2" // Nombre d'instances de VM dans le Scale Set
     },
     "instanceSize": {
-      "value": "Standard_D2s_v3"
+      "value": "Standard_D2s_v3" // Taille des instances VM
     },
     "platformFaultDomainCount": {
       "value": "1"
@@ -121,7 +122,7 @@
       "value": false
     },
     "adminUsername": {
-      "value": "Username"
+      "value": "Username" // Nom d'utilisateur administrateur pour la VM
     },
     "adminPassword": {
       "value": null

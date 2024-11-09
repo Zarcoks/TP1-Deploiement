@@ -1,12 +1,13 @@
 trigger:
-  - master
+  - master # Déclenche le pipeline uniquement sur la branche master
 
-pool: "default"
+pool: "default" # Spécifie le pool d'agents pour l'exécution des tâches
 
 variables:
   - name: CloudInitContent
 
 steps:
+# Étape d'encodage du fichier Cloud-Init en base64
   - task: PowerShell@2
     name: Encodage_CloudInit
     inputs:
@@ -18,7 +19,7 @@ steps:
         $encodedContent = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($CloudContent))
         Write-Host "##vso[task.setvariable variable=CloudInitContent]$encodedContent"
 
-  # Déploiement du Key Vault et des secrets
+   # Déploiement du Key Vault et ajout des secrets nécessaires
   - task: AzureResourceManagerTemplateDeployment@3
     name: Creation_KeyVault
     inputs:
@@ -56,5 +57,6 @@ steps:
       templateLocation: 'Linked artifact'
       csmFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.json'
       csmParametersFile: '$(Build.SourcesDirectory)\VM_Scale_Set_TP1\azuredeploy.parameters.json'
+      # Récupération du secret AdminPass stocké dans le Key Vault
       overrideParameters: '-customData $(CloudInitContent) -adminPassword $(AdminPass)'
       deploymentMode: 'Incremental'

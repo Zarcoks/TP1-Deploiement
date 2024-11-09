@@ -2,8 +2,9 @@
   "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    // set up du Key Vault
     "name": {
-      "type": "String"
+      "type": "String" // Nom du Key Vault
     },
     "location": {
       "type": "String"
@@ -47,6 +48,7 @@
   },
   "variables": {},
   "resources": [
+    // Création du Key Vault avec les propriétés spécifiées
     {
       "type": "Microsoft.KeyVault/vaults",
       "apiVersion": "2023-08-01-preview",
@@ -71,10 +73,11 @@
         "networkAcls": "[parameters('networkAcls')]"
       }
     },
+    // Ajout d'un secret sécurisé dans le Key Vault
     {
       "type": "Microsoft.KeyVault/vaults/secrets",
       "apiVersion": "2024-04-01-preview",
-      "name": "[concat(parameters('name'), '/AdminPass')]",
+      "name": "[concat(parameters('name'), '/AdminPass')]", // Nom du secret
       "location": "eastus",
       "dependsOn": [
         "[resourceId('Microsoft.KeyVault/vaults', parameters('name'))]"
@@ -84,7 +87,7 @@
         "attributes": {
           "enabled": true
         },
-        "value": "[parameters('Secret')]"
+        "value": "[parameters('Secret')]" // Valeur du secret sécurisé pour l'usage spécifié
       }
     }
   ],
